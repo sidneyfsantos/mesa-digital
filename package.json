@@ -13,6 +13,9 @@
     "typecheck": "pnpm --recursive --if-present typecheck",
     "test": "pnpm --filter backend test && pnpm --filter backend test:e2e",
     "build": "pnpm --recursive --if-present build",
-    "db:check": "pnpm --filter backend db:check"
+    "db:check": "pnpm --filter backend db:check",
+    "db:generate": "pnpm --filter backend db:generate",
+    "db:migrate": "pnpm --filter backend db:migrate",
+    "test:isolation": "pnpm --filter backend test:isolation"
   }
 }
