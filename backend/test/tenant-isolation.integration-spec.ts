@@ -90,11 +90,14 @@ describe('TenantUser RLS isolation', () => {
   });
 
   it('allows legitimate operations in the current tenant', async () => {
-    const rows = await database.withTenantContext(tenantA, async (transaction) => {
-      await repository.create(transaction, tenantA, userShared);
+    const rows = await database.withTenantContext(
+      tenantA,
+      async (transaction) => {
+        await repository.create(transaction, tenantA, userShared);
 
-      return repository.findByTenant(transaction, tenantA);
-    });
+        return repository.findByTenant(transaction, tenantA);
+      },
+    );
 
     expect(rows.some((row) => row.userId === userShared)).toBe(true);
   });

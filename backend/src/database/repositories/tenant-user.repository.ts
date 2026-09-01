@@ -12,11 +12,7 @@ export class TenantUserRepository {
       .where(eq(tenantUsers.tenantId, tenantId));
   }
 
-  create(
-    transaction: DatabaseTransaction,
-    tenantId: string,
-    userId: string,
-  ) {
+  create(transaction: DatabaseTransaction, tenantId: string, userId: string) {
     return transaction
       .insert(tenantUsers)
       .values({ tenantId, userId })
@@ -33,10 +29,7 @@ export class TenantUserRepository {
       .update(tenantUsers)
       .set({ status, updatedAt: new Date() })
       .where(
-        and(
-          eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, userId),
-        ),
+        and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)),
       )
       .returning();
   }

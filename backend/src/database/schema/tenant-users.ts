@@ -4,8 +4,8 @@ import {
   index,
   pgPolicy,
   pgTable,
-  primaryKey,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -18,6 +18,7 @@ const currentTenant = sql`nullif(current_setting('app.current_tenant_id', true),
 export const tenantUsers = pgTable(
   'tenant_users',
   {
+    id: uuid('id').defaultRandom().primaryKey(),
     tenantId: uuid('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'restrict' }),
@@ -33,10 +34,11 @@ export const tenantUsers = pgTable(
       .notNull(),
   },
   (table) => [
-    primaryKey({
-      name: 'tenant_users_tenant_id_user_id_pk',
-      columns: [table.tenantId, table.userId],
-    }),
+    unique('tenant_users_tenant_id_user_id_unique').on(
+      table.tenantId,
+      table.userId,
+    ),
+    unique('tenant_users_tenant_id_id_unique').on(table.tenantId, table.id),
     index('tenant_users_user_id_idx').on(table.userId),
     check(
       'tenant_users_status_valid',
