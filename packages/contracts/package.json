@@ -1,0 +1,24 @@
+{
+  "name": "@mesa-digital/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "oxlint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "oxlint": "1.58.0",
+    "typescript": "6.0.2"
+  }
+}
