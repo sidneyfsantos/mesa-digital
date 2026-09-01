@@ -245,3 +245,11 @@ Quando encontrar:
 - incompatibilidade com requisito definido;
 
 parar e explicar antes de executar.
+
+---
+
+## Diretriz permanente de experiência mobile-first
+
+O produto será utilizado majoritariamente em smartphones. A experiência do cliente deve ser mobile-first de verdade, e não um desktop apenas adaptado: poucos passos, alvos de toque grandes, leitura simples, hierarquia visual clara e ausência de menus escondidos ou complexidade desnecessária. O fluxo deve permanecer compreensível para pessoas com baixa familiaridade tecnológica.
+
+A interface operacional e administrativa pode oferecer mais recursos, mas deve continuar simples e direta. Quando o frontend for implementado, validar primeiro em viewport de smartphone e com interação real de toque, sem sacrificar clareza por densidade de informação.
