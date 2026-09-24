@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Mesa Digital",
-  description: "Atendimento digital para estabelecimentos com mesas.",
+  description: "Cardápio digital personalizável para atendimento presencial.",
 };
 
 interface RootLayoutProps {

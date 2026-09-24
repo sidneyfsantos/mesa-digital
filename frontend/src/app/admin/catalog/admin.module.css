@@ -1,0 +1,151 @@
+.page {
+  min-height: 100dvh;
+  background: #f6f4f1;
+  color: #211d1a;
+  padding-bottom: 40px;
+}
+.page header {
+  padding: 26px 18px 18px;
+  background: #211d1a;
+  color: #fff;
+}
+.page header p {
+  color: #f59e0b;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.page header h1 {
+  font-size: 1.8rem;
+  margin: 3px 0;
+}
+.page header span {
+  color: #d8d2cd;
+  font-size: 0.9rem;
+}
+.page nav {
+  display: flex;
+  overflow: auto;
+  gap: 7px;
+  padding: 12px;
+  background: #fff;
+  border-bottom: 1px solid #e4ded8;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.page nav button {
+  border: 0;
+  border-radius: 10px;
+  background: #eee9e4;
+  padding: 11px 14px;
+  min-height: 44px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.page nav .active {
+  background: #c2410c;
+  color: #fff;
+}
+.panel {
+  background: #fff;
+  margin: 14px;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 8px 28px #3f24100c;
+}
+.title {
+  margin-bottom: 22px;
+}
+.title h2 {
+  font-size: 1.35rem;
+}
+.title p {
+  color: #6b625b;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.field {
+  display: grid;
+  gap: 7px;
+  margin: 15px 0;
+}
+.field span {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+.field input,
+.field textarea {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #cfc6be;
+  border-radius: 11px;
+  padding: 11px;
+  font: inherit;
+  background: #fff;
+}
+.field textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 48px;
+}
+.toggle input {
+  width: 22px;
+  height: 22px;
+  accent-color: #c2410c;
+}
+.panel h3 {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #eee;
+}
+.save {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 20px;
+  border: 0;
+  border-radius: 12px;
+  background: #c2410c;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+}
+.message {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #166534;
+}
+@media (min-width: 760px) {
+  .page header,
+  .page nav,
+  .panel {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .page header {
+    margin-top: 24px;
+    border-radius: 18px;
+  }
+  .panel {
+    padding: 28px;
+  }
+  .page nav {
+    top: 0;
+    border-radius: 14px;
+    margin-top: 12px;
+  }
+}

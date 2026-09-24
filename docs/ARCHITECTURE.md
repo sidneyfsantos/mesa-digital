@@ -263,7 +263,15 @@ O modelo abaixo representa conceitos, não nomes finais de tabelas:
 
 Campos monetários devem usar decimal de precisão definida ou unidades inteiras da menor moeda, nunca ponto flutuante. Timestamps são armazenados em UTC; apresentação e agregações locais usam o fuso configurado do estabelecimento. Exclusão lógica ou estados inativos preservam referências históricas.
 
-### 9.1 Decisão: entrada configurável e fluxo operacional único
+### 9.1 Decisão: catálogo próprio e publicação contextual
+
+Cada tenant mantém categorias, produtos, preços atuais, disponibilidade, grupos de modificadores reutilizáveis, opções, ordenação e identidade visual próprios. `active` define se um item pertence ao catálogo publicado; `available` informa se um produto ativo pode ser escolhido naquele momento. Valores monetários do catálogo usam unidades inteiras da menor moeda. A camada futura de Ordering copiará nomes, preços e modificadores aceitos para snapshots imutáveis; vendas históricas nunca serão reconstruídas a partir do catálogo atual.
+
+Imagens são `MediaAsset` tenant-scoped: o banco guarda metadados e uma storage key gerada pelo servidor, não o binário. O adaptador local atende desenvolvimento e pode ser substituído por object storage sem alterar o domínio. Uploads aceitam somente formatos e limites explícitos, validam assinatura do conteúdo e ignoram o nome fornecido pelo cliente. Identidade visual permite nome, logo, capa e cor principal validada, sem CSS arbitrário.
+
+O cardápio público deriva tenant e ponto de atendimento exclusivamente de uma `EntryCredential` válida. Sua projeção omite IDs internos de tenant, credenciais e dados administrativos, inclui somente entidades ativas e mantém produtos temporariamente indisponíveis visíveis e identificados. Navegação e escolhas locais de modificadores pertencem à fronteira de catálogo: não criam `ServiceSession`, `Order` ou qualquer registro operacional.
+
+### 9.2 Decisão: entrada configurável e fluxo operacional único
 
 O domínio separa quatro conceitos que não podem ser fundidos:
 
