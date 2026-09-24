@@ -36,6 +36,13 @@
       "when": 1790283800569,
       "tag": "0004_catalog-and-public-menu",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790284902543,
+      "tag": "0005_auth-ordering-foundation",
+      "breakpoints": true
     }
   ]
 }

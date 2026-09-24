@@ -45,3 +45,28 @@ export interface PublicCatalog {
   };
   categories: PublicCatalogCategory[];
 }
+export interface CreateOrderRequest {
+  items: Array<{
+    productId: string;
+    quantity: number;
+    modifierOptionIds: string[];
+  }>;
+}
+export interface CreateOrderResponse {
+  order: {
+    id: string;
+    reference: string;
+    status: "ACCEPTED";
+    totalMinor: number;
+    createdAt: string;
+    items: Array<{
+      id: string;
+      name: string;
+      quantity: number;
+      unitPriceMinor: number;
+      modifiersTotalMinor: number;
+      lineTotalMinor: number;
+      status: "ACCEPTED";
+    }>;
+  };
+}

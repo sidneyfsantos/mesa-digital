@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import styles from "./menu.module.css";
 type Option = { id: string; name: string; priceDeltaMinor: number };
 type Group = {
@@ -37,6 +37,7 @@ type Catalog = {
   entry: { servicePoint: { label: string } };
   categories: Category[];
 };
+type CartItem = { product: Product; quantity: number; optionIds: string[] };
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 const money = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
@@ -51,6 +52,15 @@ export default function MenuPage({
   const [data, setData] = useState<Catalog | null>(null);
   const [error, setError] = useState(false);
   const [selected, setSelected] = useState<Product | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [order, setOrder] = useState<{
+    reference: string;
+    totalMinor: number;
+  } | null>(null);
+  const [submitError, setSubmitError] = useState("");
+  const idempotencyKey = useRef(crypto.randomUUID());
   useEffect(() => {
     fetch(`${api}/public/entry/${encodeURIComponent(token)}/catalog`, {
       cache: "no-store",
@@ -175,7 +185,82 @@ export default function MenuPage({
         </>
       )}
       {selected && (
-        <ProductDetail product={selected} close={() => setSelected(null)} />
+        <ProductDetail
+          product={selected}
+          close={() => setSelected(null)}
+          add={(optionIds) => {
+            setCart((current) => [
+              ...current,
+              { product: selected, quantity: 1, optionIds },
+            ]);
+            idempotencyKey.current = crypto.randomUUID();
+            setSelected(null);
+            setCartOpen(true);
+          }}
+        />
+      )}
+      {cart.length > 0 && !cartOpen && (
+        <button className={styles.cartBar} onClick={() => setCartOpen(true)}>
+          Ver carrinho · {cart.reduce((n, i) => n + i.quantity, 0)} itens
+        </button>
+      )}
+      {cartOpen && (
+        <Cart
+          items={cart}
+          sending={sending}
+          error={submitError}
+          order={order}
+          close={() => setCartOpen(false)}
+          change={(index, quantity) =>
+            setCart((current) => {
+              idempotencyKey.current = crypto.randomUUID();
+              return quantity < 1
+                ? current.filter((_, i) => i !== index)
+                : current.map((item, i) =>
+                    i === index ? { ...item, quantity } : item,
+                  );
+            })
+          }
+          submit={async () => {
+            setSending(true);
+            setSubmitError("");
+            try {
+              const response = await fetch(
+                `${api}/public/entry/${encodeURIComponent(token)}/orders`,
+                {
+                  method: "POST",
+                  headers: {
+                    "content-type": "application/json",
+                    "idempotency-key": idempotencyKey.current,
+                  },
+                  body: JSON.stringify({
+                    items: cart.map((item) => ({
+                      productId: item.product.id,
+                      quantity: item.quantity,
+                      modifierOptionIds: item.optionIds,
+                    })),
+                  }),
+                },
+              );
+              if (!response.ok)
+                throw new Error(
+                  (await response.json()).message ?? "Não foi possível enviar.",
+                );
+              const result = await response.json();
+              setOrder(result.order);
+              setCart([]);
+              idempotencyKey.current = crypto.randomUUID();
+            } catch (error) {
+              setSubmitError(
+                error instanceof Error
+                  ? error.message
+                  : "Não foi possível enviar. Tente novamente.",
+              );
+            } finally {
+              setSending(false);
+            }
+          }}
+        />
       )}
     </main>
   );
@@ -183,9 +268,11 @@ export default function MenuPage({
 function ProductDetail({
   product,
   close,
+  add,
 }: {
   product: Product;
   close: () => void;
+  add: (optionIds: string[]) => void;
 }) {
   const [choices, setChoices] = useState<Record<string, string[]>>({});
   const toggle = (g: Group, id: string) =>
@@ -254,12 +341,103 @@ function ProductDetail({
             ))}
           </fieldset>
         ))}
-        <button className={styles.select} disabled={!valid}>
-          Selecionado · {money(product.priceMinor + extra)}
+        <button
+          className={styles.select}
+          disabled={!valid}
+          onClick={() => add(Object.values(choices).flat())}
+        >
+          Adicionar · {money(product.priceMinor + extra)}
         </button>
         <small className={styles.notice}>
-          Esta seleção ainda não envia um pedido.
+          Você poderá revisar antes de enviar.
         </small>
+      </section>
+    </div>
+  );
+}
+function Cart({
+  items,
+  sending,
+  error,
+  order,
+  close,
+  change,
+  submit,
+}: {
+  items: CartItem[];
+  sending: boolean;
+  error: string;
+  order: { reference: string; totalMinor: number } | null;
+  close: () => void;
+  change: (index: number, quantity: number) => void;
+  submit: () => void;
+}) {
+  const total = items.reduce((sum, item) => {
+    const extra = item.product.modifierGroups
+      .flatMap((g) => g.options)
+      .filter((o) => item.optionIds.includes(o.id))
+      .reduce((n, o) => n + o.priceDeltaMinor, 0);
+    return sum + (item.product.priceMinor + extra) * item.quantity;
+  }, 0);
+  return (
+    <div className={styles.backdrop}>
+      <section className={styles.detail} role="dialog" aria-modal="true">
+        <button className={styles.close} onClick={close} aria-label="Fechar">
+          ×
+        </button>
+        {order ? (
+          <div className={styles.success}>
+            <h2>Pedido confirmado!</h2>
+            <p>
+              Referência <strong>{order.reference}</strong>
+            </p>
+            <b>{money(order.totalMinor)}</b>
+          </div>
+        ) : (
+          <>
+            <h2>Revise seu pedido</h2>
+            {items.map((item, index) => (
+              <article
+                className={styles.cartItem}
+                key={`${item.product.id}-${index}`}
+              >
+                <div>
+                  <strong>{item.product.name}</strong>
+                  <small>
+                    {item.product.modifierGroups
+                      .flatMap((g) => g.options)
+                      .filter((o) => item.optionIds.includes(o.id))
+                      .map((o) => o.name)
+                      .join(", ")}
+                  </small>
+                </div>
+                <div>
+                  <button onClick={() => change(index, item.quantity - 1)}>
+                    −
+                  </button>
+                  <b>{item.quantity}</b>
+                  <button onClick={() => change(index, item.quantity + 1)}>
+                    +
+                  </button>
+                </div>
+              </article>
+            ))}
+            <strong className={styles.cartTotal}>
+              Subtotal {money(total)}
+            </strong>
+            {error && <p className={styles.submitError}>{error}</p>}
+            <button
+              className={styles.select}
+              disabled={sending || !items.length}
+              onClick={submit}
+            >
+              {sending ? "Enviando…" : "Confirmar pedido"}
+            </button>
+            <small className={styles.notice}>
+              O pedido só é aceito após a confirmação do servidor.
+            </small>
+          </>
+        )}
       </section>
     </div>
   );

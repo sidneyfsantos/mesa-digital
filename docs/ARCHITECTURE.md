@@ -271,6 +271,10 @@ Imagens são `MediaAsset` tenant-scoped: o banco guarda metadados e uma storage 
 
 O cardápio público deriva tenant e ponto de atendimento exclusivamente de uma `EntryCredential` válida. Sua projeção omite IDs internos de tenant, credenciais e dados administrativos, inclui somente entidades ativas e mantém produtos temporariamente indisponíveis visíveis e identificados. Navegação e escolhas locais de modificadores pertencem à fronteira de catálogo: não criam `ServiceSession`, `Order` ou qualquer registro operacional.
 
+O primeiro pedido válido bloqueia transacionalmente o contexto físico, cria ou reutiliza sua única `ServiceSession` ativa e persiste uma nova rodada (`Order`), itens, snapshots de modificadores, histórico e outbox na mesma transação. Rodadas posteriores criam novos Orders na sessão OPEN. A API recalcula disponibilidade, cardinalidades e valores em minor units; a idempotency key vinculada ao hash canônico do payload devolve o resultado anterior ou conflito. Carrinho e tentativas rejeitadas não criam sessão.
+
+Administradores autenticam por e-mail, senha e slug do tenant. Senhas usam scrypt com salt aleatório; sessões usam cookie HttpOnly/SameSite, token opaco e somente hash persistido. O `Principal` é reconstruído a cada requisição a partir de usuário, vínculo ativo, tenant ativo, roles e capabilities, e logout revoga a sessão no servidor.
+
 ### 9.2 Decisão: entrada configurável e fluxo operacional único
 
 O domínio separa quatro conceitos que não podem ser fundidos:

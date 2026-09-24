@@ -198,10 +198,12 @@ export class CatalogRepository {
     const result = await tx.execute<{
       tenant_id: string;
       tenant_name: string;
+      credential_id: string;
+      service_point_id: string;
       service_point_kind: string;
       service_point_label: string;
     }>(
-      sql`select tenant_id, tenant_name, service_point_kind, service_point_label from resolve_public_catalog_scope(${hash})`,
+      sql`select tenant_id, tenant_name, credential_id, service_point_id, service_point_kind, service_point_label from resolve_public_catalog_scope(${hash})`,
     );
     return result.rows[0];
   }

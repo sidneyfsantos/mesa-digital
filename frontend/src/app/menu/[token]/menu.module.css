@@ -246,6 +246,71 @@
   color: #71675f;
   margin-top: 9px;
 }
+.cartBar {
+  position: fixed;
+  z-index: 8;
+  bottom: 14px;
+  left: 16px;
+  right: 16px;
+  max-width: 620px;
+  margin: auto;
+  min-height: 56px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  box-shadow: 0 8px 28px #0005;
+}
+.cartItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+}
+.cartItem small {
+  display: block;
+  color: #71675f;
+  margin-top: 4px;
+}
+.cartItem > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cartItem button {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  font-size: 1.4rem;
+}
+.cartTotal {
+  display: block;
+  text-align: right;
+  font-size: 1.2rem;
+  margin: 22px 0;
+}
+.submitError {
+  color: #9b2c22;
+  background: #fff1f0;
+  padding: 12px;
+  border-radius: 10px;
+}
+.success {
+  text-align: center;
+  padding: 38px 10px;
+}
+.success p {
+  margin: 16px 0;
+}
+.success b {
+  font-size: 1.4rem;
+  color: var(--brand);
+}
 .coverSkeleton,
 .titleSkeleton,
 .cardSkeleton {
