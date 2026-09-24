@@ -1,7 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { DatabaseService } from './database.service.js';
-import { TableQrRepository } from './repositories/table-qr.repository.js';
-import { TableRepository } from './repositories/table.repository.js';
+import { EntryCredentialRepository } from './repositories/entry-credential.repository.js';
+import { EntryModeRepository } from './repositories/entry-mode.repository.js';
+import { ServicePointRepository } from './repositories/service-point.repository.js';
 import { AccessRepository } from './repositories/access.repository.js';
 import { TenantUserRepository } from './repositories/tenant-user.repository.js';
 
@@ -10,15 +11,17 @@ import { TenantUserRepository } from './repositories/tenant-user.repository.js';
   providers: [
     DatabaseService,
     AccessRepository,
-    TableRepository,
-    TableQrRepository,
+    ServicePointRepository,
+    EntryCredentialRepository,
+    EntryModeRepository,
     TenantUserRepository,
   ],
   exports: [
     DatabaseService,
     AccessRepository,
-    TableRepository,
-    TableQrRepository,
+    ServicePointRepository,
+    EntryCredentialRepository,
+    EntryModeRepository,
     TenantUserRepository,
   ],
 })

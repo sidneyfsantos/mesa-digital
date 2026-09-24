@@ -4,7 +4,7 @@
 
 Construir uma plataforma SaaS multiempresa para atendimento em estabelecimentos com mesas, começando por restaurantes, bares, lanchonetes, cafeterias, confeitarias e negócios semelhantes.
 
-O cliente final acessará o cardápio pelo QR Code da mesa, sem necessidade de instalar aplicativo.
+O cliente final acessará o cardápio pelo QR Code do ponto de atendimento, sem necessidade de instalar aplicativo.
 
 A plataforma deve ser projetada desde o início para ser escalável, segura, resiliente e administrável pelo próprio estabelecimento.
 
@@ -83,7 +83,7 @@ Principais domínios previstos:
 - tenant/estabelecimento
 - usuários
 - perfis e permissões
-- mesas
+- pontos de atendimento
 - QR Codes
 - categorias
 - produtos
@@ -102,14 +102,18 @@ Principais domínios previstos:
 
 ---
 
-## QR Code
+## Entrada e QR Code
 
-Cada mesa deverá possuir identificação própria.
+O método de entrada é configurável por tenant. No MVP, suportar mesa fixa com QR, placa/comanda móvel com QR ou ambos. Credencial de entrada, recurso físico, sessão de atendimento e pedido são conceitos separados.
+
+Depois que uma sessão é criada, pedidos, produção, entrega, conta e fechamento seguem o mesmo fluxo, independentemente da origem. Não criar fluxos paralelos por tipo de ponto de atendimento nem fazer pedidos dependerem diretamente de mesas.
+
+Cada ponto de atendimento deverá possuir identificação própria.
 
 O QR Code deverá:
 
 - abrir diretamente o cardápio daquele estabelecimento;
-- identificar a mesa;
+- identificar o contexto de entrada;
 - não expor IDs internos previsíveis;
 - poder ser reimpresso;
 - poder ser invalidado/regenerado;
@@ -158,7 +162,7 @@ O sistema deverá preservar informação suficiente para gerar posteriormente re
 - semana
 - mês
 - ano
-- mesa
+- origem do atendimento
 - produto
 - categoria
 - atendente

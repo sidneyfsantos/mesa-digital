@@ -2,7 +2,7 @@
 
 ## 1. Status e finalidade
 
-Este documento define a arquitetura inicial proposta para o Mesa Digital, uma plataforma SaaS multi-tenant, cloud-first, voltada a restaurantes, bares, lanchonetes, cafeterias, confeitarias e estabelecimentos similares com atendimento em mesas.
+Este documento define a arquitetura inicial proposta para o Mesa Digital, uma plataforma SaaS multi-tenant, cloud-first, voltada a restaurantes, bares, lanchonetes, cafeterias, confeitarias e estabelecimentos similares com atendimento presencial configurável.
 
 O documento orienta o MVP e as evoluções imediatamente previsíveis. Ele não é uma especificação completa de implementação. Decisões ainda não validadas estão identificadas como abertas e devem ser formalizadas posteriormente por ADRs (Architecture Decision Records).
 
@@ -10,7 +10,7 @@ O documento orienta o MVP e as evoluções imediatamente previsíveis. Ele não 
 
 O Mesa Digital será uma plataforma central única, atendendo muitos estabelecimentos. Cada estabelecimento será um tenant com isolamento lógico completo. Não haverá uma instalação da aplicação por cliente.
 
-O consumidor acessará uma aplicação web responsiva, instalável opcionalmente como PWA, por meio do QR Code da mesa. O painel administrativo e as telas operacionais serão acessados por usuários autenticados do estabelecimento. Pedidos confirmados serão persistidos no backend central e distribuídos em tempo real às estações pertinentes, como cozinha e bar.
+O consumidor acessará uma aplicação web responsiva, instalável opcionalmente como PWA, por meio de uma credencial de entrada, inicialmente um QR de mesa fixa ou de placa/comanda móvel. O painel administrativo e as telas operacionais serão acessados por usuários autenticados do estabelecimento. Pedidos confirmados serão persistidos no backend central e distribuídos em tempo real às estações pertinentes, como cozinha e bar.
 
 A arquitetura inicial recomendada é um **monólito modular**, com frontend e backend implantáveis separadamente, PostgreSQL como fonte de verdade, armazenamento de objetos para imagens e Redis como componente auxiliar quando sua necessidade estiver comprovada. Essa abordagem reduz a complexidade operacional do MVP sem impedir a separação futura de módulos com carga ou ciclo de vida próprios.
 
@@ -36,7 +36,7 @@ Consumidor (QR/PWA)        Equipe (painel/operação)
 1. Garantir isolamento entre tenants em todas as camadas.
 2. Preservar integridade, rastreabilidade e histórico comercial dos pedidos.
 3. Entregar o pedido à operação com baixa latência, sem fazer do canal em tempo real a fonte de verdade.
-4. Permitir administração autônoma do catálogo, mesas, QR Codes, usuários e permissões.
+4. Permitir administração autônoma do catálogo, pontos de atendimento, QR Codes, usuários e permissões.
 5. Escalar horizontalmente os componentes stateless e evoluir módulos sem reescrever o produto.
 6. Manter segurança, observabilidade, backup e recuperação como requisitos do produto desde o início.
 7. Preparar idempotência, retry e futura operação degradada, sem implementar offline completo no MVP.
@@ -50,9 +50,9 @@ Consumidor (QR/PWA)        Equipe (painel/operação)
 - usuários, papéis e permissões;
 - categorias, produtos, fotos, preços, adicionais e promoções;
 - disponibilidade e ativação de itens;
-- mesas e ciclo de vida de seus QR Codes;
-- cardápio público contextualizado por estabelecimento e mesa;
-- abertura e fechamento operacional da sessão de atendimento da mesa;
+- pontos de atendimento fixos ou móveis e ciclo de vida de suas credenciais QR;
+- cardápio público contextualizado por estabelecimento e origem do atendimento;
+- abertura e fechamento operacional da sessão de atendimento;
 - carrinho, confirmação e criação de múltiplas rodadas/pedidos na mesma sessão;
 - roteamento operacional de itens para cozinha e bar;
 - acompanhamento de estados do pedido e de seus itens;
@@ -87,7 +87,7 @@ Cuidados:
 
 - autorização nunca deve depender apenas do frontend;
 - cache de páginas públicas deve variar por tenant, versão do catálogo e contexto válido do QR;
-- dados específicos da mesa não devem vazar por cache compartilhado;
+- dados específicos do contexto de entrada não devem vazar por cache compartilhado;
 - PWA deve começar com cache seguro de assets e leituras apropriadas, sem tratar mutações offline como concluídas.
 
 Não há motivo técnico concreto para substituir Next.js no início.
@@ -131,7 +131,7 @@ A decisão entre WebSocket e SSE permanece aberta e deve considerar proxy, recon
 
 ### 6.1 Aplicação do consumidor
 
-- resolve o QR Code e obtém contexto limitado de tenant e mesa;
+- resolve o QR Code e obtém contexto público limitado do tenant e da origem;
 - apresenta catálogo, detalhes, adicionais e promoções válidas;
 - mantém o carrinho local temporário;
 - envia uma confirmação idempotente ao backend;
@@ -140,7 +140,7 @@ A decisão entre WebSocket e SSE permanece aberta e deve considerar proxy, recon
 
 ### 6.2 Painel administrativo
 
-- gerencia catálogo, disponibilidade, mesas, QR Codes e usuários;
+- gerencia catálogo, disponibilidade, pontos de atendimento, QR Codes e usuários;
 - aplica permissões por ação;
 - apresenta histórico e auditoria conforme autorização;
 - não acessa diretamente banco, Redis ou armazenamento de objetos.
@@ -162,8 +162,8 @@ Módulos iniciais propostos:
 - **Tenancy:** estabelecimento, configurações, plano e contexto de tenant;
 - **Catalog:** categorias, produtos, preços, adicionais, fotos e disponibilidade;
 - **Promotions:** regras promocionais e validade;
-- **Tables & QR:** mesas, credenciais públicas e regeneração;
-- **Table Service:** sessão de atendimento da mesa, consumo consolidado, solicitação da conta e fechamento operacional;
+- **Entry Contexts:** mesas, credenciais públicas e regeneração;
+- **Service Sessions:** sessão de atendimento, consumo consolidado, solicitação da conta e fechamento operacional;
 - **Ordering:** carrinho validado, precificação, rodadas/pedidos vinculados à sessão, itens e estados;
 - **Production:** roteamento, cozinha, bar e estados de preparação;
 - **Cancellation:** solicitações, decisões e políticas de aprovação;
@@ -238,9 +238,10 @@ O modelo abaixo representa conceitos, não nomes finais de tabelas:
 - **User/Usuário:** identidade autenticável global;
 - **TenantUser:** vínculo do usuário com tenant, estado e papéis;
 - **Role, Permission, RolePermission:** RBAC e permissões atribuídas no tenant;
-- **Table/Mesa:** identificação interna, nome/número exibido, status e tenant;
-- **TableQrCredential:** token público derivado/hasheado, versão, status, emissão, revogação e mesa;
-- **TableSession/Sessão da mesa:** agregado central de um atendimento, criado atomicamente com o primeiro pedido aceito e vinculando tenant e mesa, estado operacional, abertura, fechamento, versão e totais consolidados derivados;
+- **TenantEntryMode/Modo de entrada do tenant:** habilita `FIXED_TABLE`, `MOBILE_TAB` ou ambos para o estabelecimento;
+- **ServicePoint/Ponto de atendimento:** recurso físico reutilizável, tenant-scoped, classificado como mesa fixa ou placa/comanda móvel; não é sessão nem pedido;
+- **EntryCredential/Credencial de entrada:** mecanismo revogável que resolve um contexto público; no MVP é um QR vinculado a um `ServicePoint`, mantendo versões históricas;
+- **ServiceSession/Sessão de atendimento:** agregado operacional criado atomicamente com o primeiro pedido aceito. Registra tenant, origem/contexto, estado, abertura, fechamento, versão e totais consolidados, sem depender estruturalmente de mesa;
 - **BillRequest/CheckRequest/Solicitação da conta:** evento operacional persistente de uma sessão existente, com solicitante, estado, instante, atendimento responsável e resolução;
 - **Category:** nome, ordenação, disponibilidade e estado;
 - **Product:** dados atuais do item comercial e categoria;
@@ -251,10 +252,10 @@ O modelo abaixo representa conceitos, não nomes finais de tabelas:
 - **Promotion:** regra, vigência, prioridade e escopo;
 - **ProductionStation/Estação:** cozinha, bar ou futuras estações configuráveis;
 - **ProductRouting:** estação responsável por produto/item;
-- **Order/Pedido:** rodada de consumo vinculada obrigatoriamente à `TableSession`, com tenant, origem, estado agregado, totais, timestamps e chave idempotente;
+- **Order/Pedido:** rodada de consumo vinculada obrigatoriamente à `ServiceSession`, com tenant, origem, estado agregado, totais, timestamps e chave idempotente;
 - **OrderItem/Item do pedido:** quantidade, estado, estação e snapshot comercial;
 - **OrderItemModifier:** adicionais escolhidos e seus snapshots;
-- **TableSessionStatusHistory/OrderStatusHistory/ItemStatusHistory:** transições independentes, ator, instante e origem;
+- **ServiceSessionStatusHistory/OrderStatusHistory/ItemStatusHistory:** transições independentes, ator, instante e origem;
 - **CancellationRequest:** alvo, solicitante, motivo, estado e decisão;
 - **AuditEvent:** ator, ação, alvo, tenant, instante, correlação e dados seguros;
 - **OutboxEvent:** evento transacional aguardando publicação;
@@ -262,34 +263,49 @@ O modelo abaixo representa conceitos, não nomes finais de tabelas:
 
 Campos monetários devem usar decimal de precisão definida ou unidades inteiras da menor moeda, nunca ponto flutuante. Timestamps são armazenados em UTC; apresentação e agregações locais usam o fuso configurado do estabelecimento. Exclusão lógica ou estados inativos preservam referências históricas.
 
-## 10. Fluxo completo do atendimento da mesa
+### 9.1 Decisão: entrada configurável e fluxo operacional único
+
+O domínio separa quatro conceitos que não podem ser fundidos:
+
+1. **método/credencial de entrada**, que resolve de forma segura um contexto público;
+2. **recurso físico**, quando existir, como mesa fixa ou placa/comanda móvel;
+3. **sessão de atendimento**, que concentra o ciclo operacional;
+4. **pedido**, que sempre pertence a uma sessão.
+
+No MVP, `service_points.kind` aceita `FIXED_TABLE` e `MOBILE_TAB`, e `tenant_entry_modes` define quais deles cada tenant utiliza. `entry_credentials` contém a credencial QR e referencia o ponto de atendimento. Uma placa/comanda móvel não possui fluxo próprio: ao fechar sua sessão, ela volta a ficar disponível para uma nova sessão; disponibilidade operacional será derivada da ausência de sessão ativa, não armazenada como verdade concorrente no cadastro.
+
+`ServiceSession` é o nome do agregado futuro. Ela deverá guardar a origem de maneira explícita e imutável, incluindo o `service_point_id` quando aplicável e snapshots legíveis suficientes para histórico. Pedidos, produção, conta, cancelamentos e fechamento dependem da sessão, nunca diretamente de `ServicePoint`. Métodos futuros que não usem recurso físico poderão criar outro resolvedor de entrada sem introduzir colunas específicas no núcleo de pedidos.
+
+Resolver uma credencial apenas fornece contexto. Não cria `ServiceSession`, não reserva ponto de atendimento e não autentica administradores.
+
+## 10. Fluxo completo do atendimento
 
 1. O consumidor lê o QR Code e abre uma URL HTTPS com credencial pública opaca.
-2. O backend resolve a credencial, confirma que está ativa e associa internamente tenant e mesa.
-3. Resolver ou escanear o QR nunca cria uma `TableSession`: o frontend recebe apenas o contexto público necessário de tenant e mesa e consulta o catálogo publicado daquele tenant.
+2. O backend resolve a credencial, confirma que está ativa e associa internamente tenant e contexto de origem.
+3. Resolver ou escanear o QR nunca cria uma `ServiceSession`: o frontend recebe apenas o contexto público necessário de tenant e contexto de origem e consulta o catálogo publicado daquele tenant.
 4. O backend só localiza a sessão ativa durante as operações que a exigem. Se ainda não houver sessão, ela será criada exclusivamente quando o primeiro pedido válido for aceito.
 5. O consumidor escolhe produtos e adicionais. O carrinho local é uma intenção, não uma cotação autoritativa.
-6. Antes da confirmação, o backend revalida QR, mesa, eventual sessão ativa, disponibilidade, regras de adicionais, promoções e preços.
+6. Antes da confirmação, o backend revalida a credencial, o ponto de atendimento, eventual sessão ativa, disponibilidade, regras de adicionais, promoções e preços.
 7. O frontend envia o comando de criação com uma chave idempotente gerada no cliente e mantém essa chave nos retries da mesma intenção.
-8. Se for o primeiro pedido aceito, o backend cria `TableSession`, `Order`, `OrderItem`s, snapshots, históricos iniciais, totais e outbox em uma única transação. Falha ou rejeição não pode deixar sessão vazia. Pedidos iniciais concorrentes convergem para a única sessão do par tenant/mesa por constraint e tratamento transacional do conflito. Nas rodadas seguintes, o backend vincula atomicamente o novo `Order` à sessão `OPEN` existente.
+8. Se for o primeiro pedido aceito, o backend cria `ServiceSession`, `Order`, `OrderItem`s, snapshots, históricos iniciais, totais e outbox em uma única transação. Falha ou rejeição não pode deixar sessão vazia. Pedidos iniciais concorrentes convergem para a única sessão do par tenant/origem por constraint e tratamento transacional do conflito. Nas rodadas seguintes, o backend vincula atomicamente o novo `Order` à sessão `OPEN` existente.
 9. O backend responde com o mesmo pedido se receber novamente a mesma chave e o mesmo payload. Chave reutilizada com payload incompatível gera conflito.
 10. Após o commit, o publicador processa a outbox e sinaliza as telas operacionais pertinentes.
 11. Cada `OrderItem` possui estação/roteamento como atributo e/ou evento e evolui independentemente. Ao atingir `READY`, gera imediatamente disponibilidade/notificação para a estação e o atendimento, sem aguardar os demais itens da rodada.
 12. Os estados operacionais agregáveis do `Order` são derivados deterministicamente dos itens. Se materializados por desempenho, são projeções reconstruíveis mantidas na mesma transação, nunca uma segunda fonte de verdade; estados de governança não deriváveis podem permanecer explícitos.
-13. Somente enquanto a `TableSession` estiver `OPEN`, novas rodadas de qualquer origem criam novos pedidos vinculados à mesma sessão. O consumo consolidado reúne todos os pedidos e ajustes válidos da sessão, sem reescrever seus históricos.
+13. Somente enquanto a `ServiceSession` estiver `OPEN`, novas rodadas de qualquer origem criam novos pedidos vinculados à mesma sessão. O consumo consolidado reúne todos os pedidos e ajustes válidos da sessão, sem reescrever seus históricos.
 14. Na ação **pedir a conta**, o backend exige uma sessão ativa em `OPEN`, registra uma `BillRequest`/`CheckRequest` idempotente, muda a sessão para `CHECK_REQUESTED` e notifica atendimento/gerência. Sem sessão ativa, a operação é inaplicável e rejeitada, sem criar sessão ou chamado. Enquanto houver solicitação ativa, retries retornam o mesmo registro e nenhuma nova rodada é aceita, independentemente de sua origem.
 15. Garçom, gerente ou administrador com a capability necessária pode retirar a solicitação. A operação resolve o registro ativo e retorna a sessão atomicamente a `OPEN`; uma solicitação posterior cria novo registro e evento histórico.
-16. No MVP, o pagamento ocorre fora da plataforma. Após o acerto externo e a conclusão dos pedidos/itens conforme a política, um usuário com capability fecha a `TableSession`, encerrando operacionalmente o atendimento e liberando a mesa.
+16. No MVP, o pagamento ocorre fora da plataforma. Após o acerto externo e a conclusão dos pedidos/itens conforme a política, um usuário com capability fecha a `ServiceSession`, encerrando operacionalmente o atendimento e liberando o ponto de atendimento reutilizável.
 
 Falha na publicação em tempo real não reverte um pedido aceito. A outbox será retentada, e a operação deve poder consultar pedidos pendentes pela API.
 
-O vínculo `Order -> TableSession` é obrigatório e imutável. Tenant e mesa do pedido devem coincidir com os da sessão; a aplicação não aceita um identificador de sessão arbitrário sem validar tenant e mesa pelo contexto do QR ou da equipe. Nenhum pedido pode ser associado posteriormente a uma sessão fechada. O consumo consolidado da sessão é calculado exclusivamente a partir de pedidos, itens, cancelamentos, descontos e ajustes persistidos que pertençam àquela sessão.
+O vínculo `Order -> ServiceSession` é obrigatório e imutável. O tenant do pedido e o contexto confiável do comando devem coincidir com os da sessão; a aplicação não aceita um identificador arbitrário de sessão. `Order` não referencia mesa ou comanda como dependência estrutural. Nenhum pedido pode ser associado posteriormente a uma sessão fechada. O consumo consolidado é calculado exclusivamente a partir de pedidos, itens, cancelamentos, descontos e ajustes persistidos que pertençam à sessão.
 
 ## 11. Estados da sessão, do pedido e do item
 
 Os estados finais devem ser validados com a operação real. A proposta inicial é:
 
-### 11.1 Sessão da mesa
+### 11.1 Sessão de atendimento
 
 ```text
 OPEN -> CHECK_REQUESTED -> CLOSING -> CLOSED
@@ -300,9 +316,9 @@ OPEN -> CHECK_REQUESTED -> CLOSING -> CLOSED
 - **OPEN:** atendimento ativo e apto a receber novas rodadas;
 - **CHECK_REQUESTED:** conta solicitada e atendimento avisado; bloqueia toda nova rodada até retirada explícita e continua sendo uma condição operacional, não financeira;
 - **CLOSING:** fechamento operacional em andamento, sem aceitar novas rodadas;
-- **CLOSED:** atendimento encerrado e mesa liberada segundo as regras do estabelecimento.
+- **CLOSED:** atendimento encerrado e eventual ponto de atendimento reutilizável liberado segundo as regras do estabelecimento.
 
-A retirada operacional resolve a solicitação ativa e retorna a sessão a `OPEN` enquanto o fechamento não tiver sido iniciado. `CLOSED` é terminal sem transição normal ou excepcional para `OPEN`. Correções posteriores usam registros ou ajustes compensatórios com capability específica e auditoria, preservando integralmente a sessão original; novo atendimento na mesa sempre cria uma nova `TableSession`. Nenhum estado representa pagamento processado pela plataforma no MVP.
+A retirada operacional resolve a solicitação ativa e retorna a sessão a `OPEN` enquanto o fechamento não tiver sido iniciado. `CLOSED` é terminal sem transição normal ou excepcional para `OPEN`. Correções posteriores usam registros ou ajustes compensatórios com capability específica e auditoria, preservando integralmente a sessão original; novo atendimento no mesmo ponto sempre cria uma nova `ServiceSession`. Nenhum estado representa pagamento processado pela plataforma no MVP.
 
 ### 11.2 Pedido
 
@@ -339,7 +355,7 @@ ACCEPTED -> IN_PREPARATION -> READY -> DELIVERED
 - **CANCELLATION_REQUESTED:** cancelamento pendente;
 - **CANCELLED:** cancelado sem remoção histórica.
 
-`TableSession`, `Order` e `OrderItem` possuem máquinas de estado distintas e históricos próprios; não se infere todo o estado apenas de timestamps. O item é a unidade de trabalho da estação e suas transições independem das transições de itens enviados a outras estações. Roteamento não é estado operacional. O estado agregado do pedido resume a rodada para acompanhamento, mas nunca substitui, homogeneíza ou apaga estados individuais. Estados operacionais do pedido são derivados deterministicamente dos itens; a tabela completa de derivação fica para a modelagem detalhada. Transições inválidas são rejeitadas. Cancelamento parcial deve recalcular os totais do pedido e da sessão de forma auditável e preservar valores originais, cancelados e efetivos. O efeito de cancelamento após produção e o significado operacional exato de `COMPLETED` permanecem decisões abertas.
+`ServiceSession`, `Order` e `OrderItem` possuem máquinas de estado distintas e históricos próprios; não se infere todo o estado apenas de timestamps. O item é a unidade de trabalho da estação e suas transições independem das transições de itens enviados a outras estações. Roteamento não é estado operacional. O estado agregado do pedido resume a rodada para acompanhamento, mas nunca substitui, homogeneíza ou apaga estados individuais. Estados operacionais do pedido são derivados deterministicamente dos itens; a tabela completa de derivação fica para a modelagem detalhada. Transições inválidas são rejeitadas. Cancelamento parcial deve recalcular os totais do pedido e da sessão de forma auditável e preservar valores originais, cancelados e efetivos. O efeito de cancelamento após produção e o significado operacional exato de `COMPLETED` permanecem decisões abertas.
 
 ## 12. RBAC e autorização
 
@@ -347,13 +363,13 @@ Papéis iniciais são modelos configuráveis, não condicionais espalhadas pelo 
 
 | Papel | Capacidades iniciais propostas |
 | --- | --- |
-| Proprietário/admin | administração completa do tenant, usuários, permissões, catálogo, mesas e aprovações |
+| Proprietário/admin | administração completa do tenant, usuários, permissões, catálogo, pontos de atendimento e aprovações |
 | Gerente | operação, catálogo e aprovações; ações sensíveis de propriedade podem ser reservadas |
-| Garçom/atendente | consultar e operar mesas/pedidos; solicitar cancelamento; sem aprovação privilegiada |
+| Garçom/atendente | consultar e operar atendimentos/pedidos; solicitar cancelamento; sem aprovação privilegiada |
 | Cozinha | visualizar e atualizar apenas itens das estações de cozinha permitidas |
 | Bar | visualizar e atualizar apenas itens das estações de bar permitidas |
 
-Permissões granulares sugeridas incluem `catalog.read`, `catalog.manage`, `table.manage`, `qr.rotate`, `session.read`, `session.withdraw_check_request`, `session.start_closing`, `session.close`, `session.correct_closed`, `order.read`, `order.create`, `order.transition`, `cancellation.request`, `cancellation.approve`, `user.manage`, `role.manage`, `audit.read` e `report.read`.
+Permissões granulares sugeridas incluem `catalog.read`, `catalog.manage`, `service_point.read`, `service_point.manage`, `qr.manage`, `session.read`, `session.withdraw_check_request`, `session.start_closing`, `session.close`, `session.correct_closed`, `order.read`, `order.create`, `order.transition`, `cancellation.request`, `cancellation.approve`, `user.manage`, `role.manage`, `audit.read` e `report.read`.
 
 Autorização avalia: identidade, tenant ativo, vínculo ativo, capability, escopo operacional e estado do recurso. Operações de sessão nunca dependem somente do nome fixo de um papel; os papéis padrão recebem capabilities conforme a política do tenant. RBAC pode ser complementado por atributos simples, como estação atribuída, sem introduzir um motor genérico de políticas no MVP. Alterações de papéis e permissões são auditadas. O sistema deve impedir autoelevação indevida e preservar ao menos um administrador recuperável por tenant.
 
@@ -372,7 +388,7 @@ Devem ser impedidas decisões duplicadas, aprovação sem permissão e, por padr
 
 ## 14. QR Codes e contexto público
 
-Cada mesa possui uma ou mais versões históricas de credencial, com no máximo uma ativa conforme a política. O QR contém URL e token aleatório criptograficamente forte, opaco e não sequencial. Não contém `tenant_id`, `table_id` ou outros IDs internos previsíveis.
+Cada ponto de atendimento possui uma ou mais versões históricas de credencial, com no máximo uma ativa conforme a política. O QR contém URL e token aleatório criptograficamente forte, opaco e não sequencial. Não contém `tenant_id`, `service_point_id` ou outros IDs internos previsíveis.
 
 Recomendação:
 
@@ -386,9 +402,9 @@ Recomendação:
 - aplicar rate limiting e monitoramento à resolução;
 - nunca usar o QR como autorização administrativa.
 
-Um QR fotografado pode ser reutilizado fora do local; token opaco não resolve sozinho presença física. No MVP, o risco deve ser reduzido com confirmação clara da mesa, limites de abuso e possibilidade de rotação. Controles adicionais de presença ou sessão são decisão aberta e devem equilibrar fraude e atrito.
+Um QR fotografado pode ser reutilizado fora do local; token opaco não resolve sozinho presença física. No MVP, o risco deve ser reduzido com confirmação clara do contexto de atendimento, limites de abuso e possibilidade de rotação. Controles adicionais de presença ou sessão são decisão aberta e devem equilibrar fraude e atrito.
 
-O QR identifica contexto de mesa, não autentica uma pessoa. Após resolução, pode ser emitida sessão pública curta e limitada, vinculada ao contexto, evitando propagar a credencial original em todas as requisições e logs.
+O QR identifica contexto de entrada, não autentica uma pessoa. Após resolução, pode ser emitida sessão pública curta e limitada, vinculada ao contexto, evitando propagar a credencial original em todas as requisições e logs.
 
 ## 15. Comunicação em tempo real
 
@@ -409,13 +425,13 @@ Em múltiplas réplicas, o fan-out precisa de broker/adaptador compartilhado, po
 
 PostgreSQL é a fonte de verdade para dados permanentes. Operações que alteram pedido, estado, cancelamento e auditoria correlata devem possuir limites transacionais explícitos.
 
-As invariantes de `TableSession` exigem garantias no banco e no caso de uso, não apenas verificações prévias no frontend:
+As invariantes de `ServiceSession` exigem garantias no banco e no caso de uso, não apenas verificações prévias no frontend:
 
-- resolver o QR não escreve `TableSession`; a primeira sessão e todo o primeiro pedido são criados no mesmo commit, sem sessão vazia em caso de rejeição ou rollback;
-- uma constraint/índice único parcial, ou mecanismo transacional equivalente, permite no máximo uma sessão operacional não encerrada por `(tenant_id, table_id)` e faz pedidos iniciais concorrentes convergirem para ela;
-- chaves estrangeiras compostas e validação tenant-scoped garantem que um `Order` só pertença a uma `TableSession` do mesmo tenant e da mesma mesa;
+- resolver o QR não escreve `ServiceSession`; a primeira sessão e todo o primeiro pedido são criados no mesmo commit, sem sessão vazia em caso de rejeição ou rollback;
+- uma constraint/índice único parcial, ou mecanismo transacional equivalente, permite no máximo uma sessão operacional não encerrada por `(tenant_id, service_point_id)` quando a origem física exigir exclusividade, fazendo pedidos iniciais concorrentes convergirem para ela;
+- chaves estrangeiras compostas e validação tenant-scoped garantem que `ServiceSession`, credencial e eventual ponto de atendimento pertençam ao mesmo tenant; `Order` referencia somente a sessão do mesmo tenant;
 - criação de pedido valida e altera a versão/lock lógico da sessão na mesma transação, aceitando novas rodadas apenas em `OPEN` e impedindo associação a sessão fechada ou diferente;
-- criação atômica da primeira sessão/pedido, nova rodada, solicitação e retirada da conta, aprovação de cancelamento que altere o consolidado e início/conclusão do fechamento participam da mesma estratégia consistente de versão ou lock da `TableSession`;
+- criação atômica da primeira sessão/pedido, nova rodada, solicitação e retirada da conta, aprovação de cancelamento que altere o consolidado e início/conclusão do fechamento participam da mesma estratégia consistente de versão ou lock da `ServiceSession`;
 - o início do fechamento muda atomicamente a sessão para `CLOSING`; comandos concorrentes disputam a mesma versão ou lock, de modo que apenas uma ordem válida prevaleça;
 - o fechamento é rejeitado se houver `OrderItem` diferente de `DELIVERED` ou `CANCELLED` — inclusive `READY` —, cancelamento pendente ou `Order` não terminal;
 - pedido integralmente cancelado permanece terminal no histórico e contribui zero para o total efetivo;
@@ -615,9 +631,9 @@ O MVP deve entregar:
 1. onboarding/configuração básica do estabelecimento;
 2. autenticação segura da equipe e cinco papéis iniciais com permissões essenciais;
 3. gestão de categorias, produtos, fotos, preços, adicionais, disponibilidade e ativo/inativo;
-4. gestão de mesas e geração, reimpressão, revogação e regeneração de QR Codes;
+4. gestão de mesas fixas e placas/comandas móveis, com geração, reimpressão, revogação e regeneração de QR Codes;
 5. cardápio responsivo acessado pelo QR, detalhes, adicionais e carrinho;
-6. resolução segura do QR sem criar sessão e abertura atômica da única `TableSession` da mesa junto com o primeiro pedido aceito;
+6. resolução segura do QR sem criar sessão e abertura atômica da única `ServiceSession` da origem física junto com o primeiro pedido aceito;
 7. validação e criação idempotente de múltiplas rodadas/pedidos vinculados à mesma sessão, com snapshots comerciais;
 8. visão operacional em tempo real com itens independentes e separação configurável entre cozinha e bar;
 9. estados separados de sessão, pedido agregado derivado e item independente por estação, com notificação imediata de item `READY`;
@@ -637,13 +653,13 @@ Critério essencial: um pedido confirmado deve existir centralmente, pertencer �
 | Risco | Impacto | Mitigação proposta |
 | --- | --- | --- |
 | Falha de filtro causa vazamento entre tenants | Crítico | contexto confiável, repositórios tenant-scoped, constraints, RLS, testes negativos e revisão |
-| QR copiado/usado fora do local | Pedidos indevidos | token forte, rotação, rate limit, confirmação da mesa e estudo de prova de presença |
+| QR copiado/usado fora do local | Pedidos indevidos | token forte, rotação, rate limit, confirmação do contexto de atendimento e estudo de prova de presença |
 | Retry cria pedidos duplicados | Cobrança/produção duplicada | chave idempotente, constraint única, hash de payload e resposta reaproveitada |
-| Duas sessões ficam abertas na mesma mesa | Consumo dividido e mesa inconsistente | criação da sessão junto com o primeiro pedido, unicidade por tenant/mesa e tratamento de conflito |
-| Pedido é associado à sessão errada | Vazamento lógico e conta incorreta | vínculo composto tenant/mesa/sessão, contexto confiável e validação transacional |
+| Duas sessões ficam abertas no mesmo ponto de atendimento | Consumo dividido e mesa inconsistente | criação da sessão junto com o primeiro pedido, unicidade por tenant/origem e tratamento de conflito |
+| Pedido é associado à sessão errada | Vazamento lógico e conta incorreta | vínculo composto tenant/origem/sessão, contexto confiável e validação transacional |
 | Sessão fecha com pedidos ou itens ativos | Produção órfã e consumo incompleto | guarda de fechamento, consulta/lock dos filhos ativos e política explícita |
 | Novo pedido concorre com conta/fechamento | Rodada perdida ou incluída depois do bloqueio | versão/lock comum da sessão e transições atômicas que determinam um único vencedor válido |
-| Sessão fechada é reaberta indevidamente | Histórico e ocupação da mesa inconsistentes | estado terminal sem retorno, nova sessão para novo atendimento e ajustes compensatórios auditados |
+| Sessão fechada é reaberta indevidamente | Histórico e ocupação do ponto de atendimento inconsistentes | estado terminal sem retorno, nova sessão para novo atendimento e ajustes compensatórios auditados |
 | Consolidação da sessão diverge dos pedidos | Conta operacional incorreta | cálculo canônico no servidor, mesma transação, precisão monetária e reconciliação pelos detalhes |
 | Evento em tempo real é perdido | Operação não vê pedido | outbox, retry, consulta/reconciliação e alerta de atraso |
 | WebSocket/SSE vira fonte de verdade | Divergência | PostgreSQL canônico e ressincronização pela API |
@@ -683,7 +699,7 @@ As decisões abaixo precisam ser tomadas antes da fase indicada, com ADR quando 
 18. **LGPD**, papéis de controlador/operador, base legal, atendimento de direitos e política de privacidade — antes de coletar dados reais.
 19. **Necessidade futura de pagamento, fiscal, impressão ou integração com PDV** — fora do MVP atual; definir somente antes de expandir essa fronteira.
 20. **Estratégia de slug/domínio do tenant e cache de catálogo** — antes das rotas públicas definitivas.
-21. **Matriz inicial de capabilities de sessão por papel padrão e limites dos ajustes compensatórios em sessão fechada** — antes da implementação do atendimento da mesa.
+21. **Matriz inicial de capabilities de sessão por papel padrão e limites dos ajustes compensatórios em sessão fechada** — antes da implementação do atendimento.
 
 ## 29. Princípios de decisão futura
 
