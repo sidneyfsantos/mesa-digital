@@ -8,6 +8,7 @@ import { EntryContextsModule } from './entry-contexts/entry-contexts.module.js';
 import { OrderingModule } from './ordering/ordering.module.js';
 import { ProductionModule } from './production/production.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
+import { ServiceSessionModule } from './service-session/service-session.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RealtimeModule } from './realtime/realtime.module.js';
     OrderingModule,
     ProductionModule,
     RealtimeModule,
+    ServiceSessionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

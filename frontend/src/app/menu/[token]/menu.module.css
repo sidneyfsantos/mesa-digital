@@ -336,6 +336,148 @@
     background-position: -200% 0;
   }
 }
+.notice {
+  display: block;
+  text-align: center;
+  color: #71675f;
+  margin-top: 9px;
+}
+
+/* Session Status Bar */
+.sessionBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #faf8f6;
+  border-bottom: 1px solid #eee;
+  font-size: 0.8rem;
+}
+.sessionStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.status.open { background: #dcfce7; color: #166534; }
+.status.check_requested { background: #fef9c3; color: #854d0e; }
+.status.closing { background: #dbeafe; color: #1e40af; }
+.status.closed { background: #e5e7eb; color: #374151; }
+.billBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fef9c3;
+  color: #854d0e;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+.blockedNotice {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #9b2c22;
+  font-weight: 600;
+  font-size: 0.65rem;
+}
+.closingBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+.closedBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #374151;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+/* Action Bar */
+.actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  flex-wrap: wrap;
+}
+.waiterBtn, .billBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 140px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+}
+.waiterBtn { background: #3b82f6; }
+.waiterBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+.billBtn { background: #eab308; color: #1a1a1a; }
+.billBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+.activeCall, .activeBill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.activeCall { background: #dbeafe; color: #1e40af; }
+.activeBill { background: #fef9c3; color: #854d0e; }
+.withdrawBtn {
+  min-width: 100px;
+  min-height: 36px;
+  border: 1px solid #eab308;
+  border-radius: 8px;
+  background: #fff;
+  color: #854d0e;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.errorToast {
+  margin: 10px 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #9b2c22;
+  font-size: 0.85rem;
+}
+
 @media (min-width: 700px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
@@ -353,5 +495,13 @@
   }
   .content {
     padding: 4px 24px;
+  }
+  .actionBar {
+    padding: 12px 24px;
+    max-width: 960px;
+    margin: 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 5;
   }
 }

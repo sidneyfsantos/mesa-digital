@@ -50,6 +50,20 @@
       "when": 1790291027441,
       "tag": "0006_initial-tenancy",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790297016205,
+      "tag": "0007_initial-tenancy",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790297431654,
+      "tag": "0008_initial-tenancy",
+      "breakpoints": true
     }
   ]
 }
