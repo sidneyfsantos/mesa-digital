@@ -23,6 +23,7 @@ import { CapabilitiesGuard } from './capabilities.guard.js';
     AuthorizationService,
     AuthorizationBootstrapService,
     CapabilitiesGuard,
+    PasswordService,
   ],
 })
 export class AuthModule implements NestModule {

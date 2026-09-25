@@ -64,6 +64,13 @@
       "when": 1790297431654,
       "tag": "0008_initial-tenancy",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790345231475,
+      "tag": "0009_initial-tenancy",
+      "breakpoints": true
     }
   ]
 }

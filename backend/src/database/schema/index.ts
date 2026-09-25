@@ -4,6 +4,7 @@ export * from './auth-sessions.js';
 export * from './ordering.js';
 export * from './production.js';
 export * from './service-session-ext.js';
+export * from './onboarding.js';
 export * from './roles.js';
 export * from './entry-contexts.js';
 export * from './tenant-users.js';
