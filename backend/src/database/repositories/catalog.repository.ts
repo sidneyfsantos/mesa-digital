@@ -9,6 +9,7 @@ import {
   modifierOptions,
   productMedia,
   productModifierGroups,
+  productRouting,
   tenantBranding,
 } from '../schema/index.js';
 @Injectable()
@@ -217,6 +218,7 @@ export class CatalogRepository {
       links,
       images,
       media,
+      routing,
     ] = await Promise.all([
       tx
         .select()
@@ -291,6 +293,10 @@ export class CatalogRepository {
         .select({ id: mediaAssets.id, storageKey: mediaAssets.storageKey })
         .from(mediaAssets)
         .where(eq(mediaAssets.tenantId, tenantId)),
+      tx
+        .select()
+        .from(productRouting)
+        .where(eq(productRouting.tenantId, tenantId)),
     ]);
     return {
       branding: branding[0],
@@ -301,6 +307,7 @@ export class CatalogRepository {
       links,
       images,
       media,
+      routing,
     };
   }
 }

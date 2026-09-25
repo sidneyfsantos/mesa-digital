@@ -2,6 +2,7 @@ export * from './access.js';
 export * from './catalog.js';
 export * from './auth-sessions.js';
 export * from './ordering.js';
+export * from './production.js';
 export * from './roles.js';
 export * from './entry-contexts.js';
 export * from './tenant-users.js';

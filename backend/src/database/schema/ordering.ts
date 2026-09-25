@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { applicationRole } from './roles.js';
 import { entryCredentials, servicePoints } from './entry-contexts.js';
+import { productionStations } from './production.js';
 import { tenants } from './tenants.js';
 const ct = sql`nullif(current_setting('app.current_tenant_id',true),'')::uuid`;
 const policy = (n: string, c: any) =>
@@ -91,6 +92,7 @@ export const orderItems = pgTable(
     tenantId: uuid('tenant_id').notNull(),
     orderId: uuid('order_id').notNull(),
     productId: uuid('product_id').notNull(),
+    stationId: uuid('station_id'),
     quantity: integer('quantity').notNull(),
     status: varchar('status', { length: 30 }).default('ACCEPTED').notNull(),
     productNameSnapshot: varchar('product_name_snapshot', {
@@ -102,6 +104,9 @@ export const orderItems = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    readyAt: timestamp('ready_at', { withTimezone: true }),
+    deliveredAt: timestamp('delivered_at', { withTimezone: true }),
   },
   (t) => [
     unique('order_items_tenant_id_id_unique').on(t.tenantId, t.id),
@@ -109,6 +114,11 @@ export const orderItems = pgTable(
       name: 'order_items_order_fk',
       columns: [t.tenantId, t.orderId],
       foreignColumns: [orders.tenantId, orders.id],
+    }),
+    foreignKey({
+      name: 'order_items_station_fk',
+      columns: [t.tenantId, t.stationId],
+      foreignColumns: [productionStations.tenantId, productionStations.id],
     }),
     check('order_items_quantity_valid', sql`${t.quantity}>0`),
     check(

@@ -1,0 +1,237 @@
+.page {
+  min-height: 100dvh;
+  background: #f6f4f1;
+  color: #211d1a;
+  padding-bottom: 100px;
+}
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 16px;
+  background: #211d1a;
+  color: #fff;
+}
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+.kind {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f59e0b;
+  font-weight: 700;
+}
+.lastUpdate {
+  font-size: 0.75rem;
+  color: #9a8f86;
+  margin-top: 4px;
+}
+.errorBar {
+  margin: 12px 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #9b2c22;
+  font-size: 0.9rem;
+}
+.loading {
+  padding: 40px;
+  text-align: center;
+  color: #6b625b;
+}
+.list {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #9a8f86;
+  text-align: center;
+}
+.empty svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+.empty p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6b625b;
+  margin: 0 0 4px;
+}
+.empty small {
+  font-size: 0.85rem;
+}
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 16px #3f24100c;
+  border-left: 5px solid #e4ded8;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.card:active {
+  transform: scale(0.99);
+}
+.card.status-accepted {
+  border-left-color: #eab308;
+}
+.card.status-in-preparation {
+  border-left-color: #3b82f6;
+}
+.card.status-ready {
+  border-left-color: #22c55e;
+}
+.card.status-delivered {
+  border-left-color: #16a34a;
+  opacity: 0.6;
+}
+.card.status-cancelled {
+  border-left-color: #ef4444;
+  opacity: 0.5;
+}
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.orderInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.orderInfo strong {
+  font-size: 0.9rem;
+}
+.time {
+  font-size: 0.75rem;
+  color: #9a8f86;
+}
+.badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge.status-accepted {
+  background: #fef9c3;
+  color: #854d0e;
+}
+.badge.status-in-preparation {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.badge.status-ready {
+  background: #dcfce7;
+  color: #166534;
+}
+.badge.status-delivered {
+  background: #e5e7eb;
+  color: #374151;
+}
+.badge.status-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.itemMain {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.itemName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.quantity {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #f6f4f1;
+  color: #c2410c;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-right: 8px;
+}
+.timestamps {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.75rem;
+  color: #6b625b;
+  text-align: right;
+  white-space: nowrap;
+}
+.timestamp .label {
+  color: #9a8f86;
+  font-weight: 500;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.actionBtn {
+  min-width: 100px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 11px;
+  background: #c2410c;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.status-accepted .actionBtn {
+  background: #eab308;
+}
+.status-in-preparation .actionBtn {
+  background: #3b82f6;
+}
+.status-ready .actionBtn {
+  background: #22c55e;
+}
+.cancelled {
+  font-size: 0.85rem;
+  color: #9b2c22;
+  font-weight: 700;
+}
+.delivered {
+  font-size: 0.85rem;
+  color: #166534;
+  font-weight: 700;
+}
+@media (min-width: 760px) {
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+    padding: 24px;
+  }
+  .header {
+    padding: 24px 24px;
+  }
+}

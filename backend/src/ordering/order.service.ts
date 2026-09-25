@@ -20,6 +20,7 @@ import {
   QR_TOKEN_PATTERN,
   QrTokenService,
 } from '../entry-contexts/qr-token.service.js';
+import { publishOrderEvent, publishStationEvent } from '../realtime/realtime.controller.js';
 type RequestItem = {
   productId: string;
   quantity: number;
@@ -81,7 +82,15 @@ export class OrderService {
       if (prior[0]) {
         if (prior[0].payloadHash !== payloadHash)
           throw new ConflictException('Idempotency key already used.');
-        return this.result(tx, scope.tenant_id, prior[0]);
+        const result = this.result(tx, scope.tenant_id, prior[0]);
+        const createdOrder = await result;
+        const itemsByStation = new Map<string, any[]>();
+        for (const item of createdOrder.order.items) {
+          const stationKey = item.stationId ?? 'unassigned';
+          if (!itemsByStation.has(stationKey)) itemsByStation.set(stationKey, []);
+          itemsByStation.get(stationKey)!.push(item);
+        }
+        return { ...createdOrder, itemsByStation, tenantId: scope.tenant_id };
       }
       const data = await this.catalog.publicCatalog(tx, scope.tenant_id);
       const priced = [] as {
@@ -161,6 +170,7 @@ export class OrderService {
           })
           .returning()
       )[0];
+      const routingMap = new Map(data.routing.map((r: any) => [r.productId, r.stationId]));
       for (const item of priced) {
         const row = (
           await tx
@@ -169,6 +179,7 @@ export class OrderService {
               tenantId: scope.tenant_id,
               orderId: order.id,
               productId: item.product.id,
+              stationId: routingMap.get(item.product.id) ?? null,
               quantity: item.quantity,
               productNameSnapshot: item.product.name,
               unitPriceMinor: item.product.priceMinor,
@@ -208,9 +219,25 @@ export class OrderService {
           eventType: 'order.accepted',
           payload: { orderId: order.id, serviceSessionId: session.id },
         });
-      return this.result(tx, scope.tenant_id, order);
+
+      const result = this.result(tx, scope.tenant_id, order);
+      const createdOrder = await result;
+
+      const itemsByStation = new Map<string, any[]>();
+      for (const item of createdOrder.order.items) {
+        const stationKey = item.stationId ?? 'unassigned';
+        if (!itemsByStation.has(stationKey)) itemsByStation.set(stationKey, []);
+        itemsByStation.get(stationKey)!.push(item);
+      }
+
+      const tenantId = scope.tenant_id;
+      return { ...createdOrder, itemsByStation, tenantId };
+    }).then((result) => {
+      this.publishOrderCreated(result.tenantId, result.order, result.itemsByStation);
+      return result;
     });
   }
+
   private async result(tx: any, tenantId: string, order: any) {
     const items = await tx
       .select()
@@ -236,8 +263,42 @@ export class OrderService {
           modifiersTotalMinor: i.modifiersTotalMinor,
           lineTotalMinor: i.lineTotalMinor,
           status: i.status,
+          stationId: i.stationId,
         })),
       },
     };
+  }
+
+  private publishOrderCreated(tenantId: string, order: any, itemsByStation: Map<string, any[]>) {
+    const now = new Date();
+    publishOrderEvent(tenantId, {
+      type: 'order.created',
+      payload: {
+        orderId: order.id,
+        orderReference: order.reference,
+        status: order.status,
+        totalMinor: order.totalMinor,
+        createdAt: order.createdAt,
+        items: order.items,
+        itemsByStation: Object.fromEntries(itemsByStation),
+        timestamp: now.toISOString(),
+      },
+      timestamp: now.toISOString(),
+    });
+
+    for (const [stationId, items] of itemsByStation) {
+      if (stationId !== 'unassigned') {
+        publishStationEvent(tenantId, stationId, {
+          type: 'order.created',
+          payload: {
+            orderId: order.id,
+            orderReference: order.reference,
+            items,
+            timestamp: now.toISOString(),
+          },
+          timestamp: now.toISOString(),
+        });
+      }
+    }
   }
 }
